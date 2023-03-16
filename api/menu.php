@@ -5,13 +5,18 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 
 $app->get('/menu', function (Request $request, Response $response) {
     $conn = $GLOBALS['connect'];
-    $sql = 'select fid AS id, Foods.name, Food_type.name as TYPE, price , img from Foods inner join Food_type on Foods.tid = Food_type.tid';
+    $sql = 'select fid AS id, Foods.name, CONCAT(Food_type.name, " / ", Food_type.name_th) as type, price , img from Foods inner join Food_type on Foods.tid = Food_type.tid';
     $stmt = $conn->prepare($sql);
     $stmt->execute();
     $result = $stmt->get_result();
     $data = array();
     foreach ($result as $row) {
-        array_push($data, $row);
+        if (isset($data[$row['type']])) {
+            array_push($data[$row['type']], $row);
+        } else {
+            $data[$row['type']] = array();
+        }
+        // array_push($data, $row);
     }
 
     $response->getBody()->write(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK));
@@ -24,7 +29,7 @@ $app->get('/menu/type/{food_type}', function (Request $request, Response $respon
     $conn = $GLOBALS['connect'];
 
 
-    $sql = 'select fid AS id, Foods.name, Food_type.name as TYPE, price , img from Foods inner join Food_type on Foods.tid = Food_type.tid WHERE Food_type.name LIKE ?';
+    $sql = 'select fid AS id, Foods.name, CONCAT(Food_type.name, " / ", Food_type.name_th) as type, price , img from Foods inner join Food_type on Foods.tid = Food_type.tid WHERE Food_type.name LIKE ?';
     $stmt = $conn->prepare($sql);
     $name = '%' . $args['food_type'] . '%';
     $stmt->bind_param('s', $name);
@@ -44,7 +49,7 @@ $app->get('/menu/name/{food_name}', function (Request $request, Response $respon
     $conn = $GLOBALS['connect'];
 
 
-    $sql = 'select fid AS id, Foods.name, Food_type.name as TYPE, price , img from Foods inner join Food_type on Foods.tid = Food_type.tid WHERE Foods.name LIKE ?';
+    $sql = 'select fid AS id, Foods.name, CONCAT(Food_type.name, " / ", Food_type.name_th) as type, price , img from Foods inner join Food_type on Foods.tid = Food_type.tid WHERE Foods.name LIKE ?';
     $stmt = $conn->prepare($sql);
     $name = '%' . $args['food_name'] . '%';
     $stmt->bind_param('s', $name);
@@ -52,7 +57,11 @@ $app->get('/menu/name/{food_name}', function (Request $request, Response $respon
     $result = $stmt->get_result();
     $data = array();
     foreach ($result as $row) {
-        array_push($data, $row);
+        if (isset($data[$row['type']])) {
+            array_push($data[$row['type']], $row);
+        } else {
+            $data[$row['type']] = array();
+        }
     }
 
     $response->getBody()->write(json_encode($data, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK));
@@ -64,7 +73,7 @@ $app->get('/menu/name/{food_name}', function (Request $request, Response $respon
 $app->get('/menu/view/{fid}', function (Request $request, Response $response, $args) {
     $fid = $args['fid'];
     $conn = $GLOBALS['connect'];
-    $sql = 'select fid AS id, Foods.name, Food_type.name as TYPE, price , img from Foods inner join Food_type on Foods.tid = Food_type.tid WHERE Foods.fid = ?';
+    $sql = 'select fid AS id, Foods.name, CONCAT(Food_type.name, " / ", Food_type.name_th) as type, price , img from Foods inner join Food_type on Foods.tid = Food_type.tid WHERE Foods.fid = ?';
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('i', $fid);
     $stmt->execute();
