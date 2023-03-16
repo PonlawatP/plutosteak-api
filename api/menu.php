@@ -15,6 +15,7 @@ $app->get('/menu', function (Request $request, Response $response) {
             array_push($data[$row['type']], $row);
         } else {
             $data[$row['type']] = array();
+            array_push($data[$row['type']], $row);
         }
         // array_push($data, $row);
     }
@@ -61,6 +62,7 @@ $app->get('/menu/name/{food_name}', function (Request $request, Response $respon
             array_push($data[$row['type']], $row);
         } else {
             $data[$row['type']] = array();
+            array_push($data[$row['type']], $row);
         }
     }
 
