@@ -13,6 +13,7 @@ $app->addErrorMiddleware(true, true, true);
 
 require __DIR__ . '/dbconnect.php';
 require __DIR__ . '/api/menu.php';
+require __DIR__ . '/api/user.php';
 // require __DIR__ . '/api/country.php';
 
 $app->options('/{routes:.+}', function ($request, $response, $args) {
