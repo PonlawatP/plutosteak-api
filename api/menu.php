@@ -26,34 +26,14 @@ $app->get('/menu', function (Request $request, Response $response) {
         ->withStatus(200);
 });
 
-$app->get('/menu/type/{food_type}', function (Request $request, Response $response, $args) {
+$app->get('/menu/filter/{filt}', function (Request $request, Response $response, $args) {
     $conn = $GLOBALS['connect'];
 
 
-    $sql = 'select fid AS id, Foods.name, CONCAT(Food_type.name, " / ", Food_type.name_th) as type, price , img from Foods inner join Food_type on Foods.tid = Food_type.tid WHERE Food_type.name LIKE ?';
+    $sql = 'select fid AS id, Foods.name, CONCAT(Food_type.name, " / ", Food_type.name_th) as type, price , img from Foods inner join Food_type on Foods.tid = Food_type.tid WHERE Food_type.name LIKE ? OR Food_type.name_th LIKE ? OR Foods.name LIKE ?';
     $stmt = $conn->prepare($sql);
-    $name = '%' . $args['food_type'] . '%';
-    $stmt->bind_param('s', $name);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $data = array();
-    foreach ($result as $row) {
-        array_push($data, $row);
-    }
-
-    $response->getBody()->write(json_encode($data, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK));
-    return $response
-        ->withHeader('Content-Type', 'application/json; charset=utf-8')
-        ->withStatus(200);
-});
-$app->get('/menu/name/{food_name}', function (Request $request, Response $response, $args) {
-    $conn = $GLOBALS['connect'];
-
-
-    $sql = 'select fid AS id, Foods.name, CONCAT(Food_type.name, " / ", Food_type.name_th) as type, price , img from Foods inner join Food_type on Foods.tid = Food_type.tid WHERE Foods.name LIKE ?';
-    $stmt = $conn->prepare($sql);
-    $name = '%' . $args['food_name'] . '%';
-    $stmt->bind_param('s', $name);
+    $name = '%' . $args['filt'] . '%';
+    $stmt->bind_param('sss', $name, $name, $name);
     $stmt->execute();
     $result = $stmt->get_result();
     $data = array();
