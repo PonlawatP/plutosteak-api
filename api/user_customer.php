@@ -112,7 +112,7 @@ $app->get('/account/cart', function (Request $request, Response $response, $args
 
     $sql = '
         SELECT 
-            `Order`.fid, Foods.name, `Order`.price, `Order`.amount, (`Order`.price*`Order`.amount) AS total_price
+            `Order`.fid, Foods.name, `Order`.price, `Order`.amount, (`Order`.price*`Order`.amount) AS total_price, Foods.img
         FROM 
             `Order` INNER JOIN Foods INNER JOIN User INNER JOIN Bill
         ON
