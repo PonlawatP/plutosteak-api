@@ -120,6 +120,8 @@ $app->get('/account/cart', function (Request $request, Response $response, $args
             AND
             Bill.uid = User.uid
             AND
+            `Order`.bid = Bill.bid
+            AND
             Bill.status = 0
             AND
             User.username = ?
@@ -281,6 +283,129 @@ $app->post('/account/cart/submit', function (Request $request, Response $respons
     $stmt->execute();
 
     $json = json_encode(array('success' => true), JSON_PRETTY_PRINT);
+    $response->getBody()->write($json);
+    return $response->withHeader('Content-Type', 'application/json');
+});
+
+// order section
+
+$app->get('/account/order', function (Request $request, Response $response, $args) {
+    $c = $GLOBALS['connect'];
+
+    $username = $request->getHeaders()['Username'][0];
+
+    $sql = '
+        SELECT
+            `bid`,  `Customer_name`,  Bill.`phone_number`, Bill.`address`,  `Total_price`,  `Datetime`,  `status`
+        FROM
+            Bill 
+            INNER JOIN User
+        WHERE
+            Bill.status <> 0
+            AND
+            Bill.uid = User.uid
+            AND
+            User.username = ?
+    ';
+    $stmt = $c->prepare($sql);
+    $stmt->bind_param('s', $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $data = array();
+    foreach ($result as $row) {
+        $row['orders'] = array();
+        $sql = '
+        SELECT 
+            `Order`.fid, Foods.name, `Order`.price, `Order`.amount, (`Order`.price*`Order`.amount) AS total_price, Foods.img
+        FROM 
+            `Order` INNER JOIN Foods INNER JOIN Bill
+        ON
+            Foods.fid = `Order`.fid
+            AND
+            `Order`.bid = Bill.bid
+            AND
+            Bill.bid = ?
+    ';
+        $stmt = $c->prepare($sql);
+        $stmt->bind_param('i', $row['bid']);
+        $stmt->execute();
+        $order = $stmt->get_result();
+
+        foreach ($order as $o_res) {
+            array_push($row['orders'], $o_res);
+        }
+
+        unset($row['password']);
+        array_push($data, $row);
+    }
+
+    $json = json_encode(array('data' => $data), JSON_PRETTY_PRINT);
+
+    $response->getBody()->write($json);
+    return $response->withHeader('Content-Type', 'application/json');
+});
+
+$app->get('/account/order/{bid}', function (Request $request, Response $response, $args) {
+    $bid = $args['bid'];
+    $c = $GLOBALS['connect'];
+
+    $sql = '
+        SELECT
+        `bid`,  `Customer_name`,  Bill.`phone_number`, Bill.`address`,  `Total_price`,  `Datetime`,  `status`
+        FROM
+            Bill
+        WHERE
+            bid = ?
+    ';
+    $stmt = $c->prepare($sql);
+    $stmt->bind_param('i', $bid);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $data = array();
+    foreach ($result as $row) {
+        $row['orders'] = array();
+        $sql = '
+        SELECT
+            `Order`.fid, Foods.name, `Order`.price, `Order`.amount, (`Order`.price*`Order`.amount) AS total_price, Foods.img
+        FROM
+            `Order` INNER JOIN Foods INNER JOIN Bill
+        ON
+            Foods.fid = `Order`.fid
+            AND
+            `Order`.bid = Bill.bid
+            AND
+            Bill.bid = ?
+    ';
+        $stmt = $c->prepare($sql);
+        $stmt->bind_param('i', $row['bid']);
+        $stmt->execute();
+        $order = $stmt->get_result();
+
+        foreach ($order as $o_res) {
+            array_push($row['orders'], $o_res);
+        }
+
+        $data = $row;
+    }
+
+    $json = json_encode(array('data' => $data), JSON_PRETTY_PRINT);
+
+    $response->getBody()->write($json);
+    return $response->withHeader('Content-Type', 'application/json');
+});
+
+$app->post('/account/order/{bid}', function (Request $request, Response $response, $args) {
+    $bid = $args['bid'];
+    $c = $GLOBALS['connect'];
+    $body = json_decode($request->getBody(), true);
+
+    $sql = 'UPDATE `Bill` SET `status` = ? WHERE bid = ?';
+    $stmt = $c->prepare($sql);
+    $stmt->bind_param('ii', $body['status'], $bid);
+    $stmt->execute();
+
+    $json = json_encode(array('success' => true), JSON_PRETTY_PRINT);
+
     $response->getBody()->write($json);
     return $response->withHeader('Content-Type', 'application/json');
 });
