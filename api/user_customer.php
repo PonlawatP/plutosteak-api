@@ -307,8 +307,20 @@ $app->get('/account/order', function (Request $request, Response $response, $arg
             AND
             User.username = ?
     ';
+    if ($username === "_admin") {
+        $sql = '
+        SELECT
+            `bid`,  `Customer_name`,  Bill.`phone_number`, Bill.`address`,  `Total_price`,  `Datetime`,  `status`
+        FROM
+            Bill
+        WHERE
+            Bill.status <> 0
+    ';
+    }
     $stmt = $c->prepare($sql);
-    $stmt->bind_param('s', $username);
+    if ($username !== "_admin") {
+        $stmt->bind_param('s', $username);
+    }
     $stmt->execute();
     $result = $stmt->get_result();
     $data = array();
