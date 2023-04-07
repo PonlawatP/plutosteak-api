@@ -150,6 +150,7 @@ $app->put('/account/cart', function (Request $request, Response $response, $args
     $body = json_decode($request->getBody(), true);
 
     $bid = getBillOrderID($username);
+    $user = getUser($username);
 
     if ($bid == -1) {
         $json = json_encode(array('success' => false), JSON_PRETTY_PRINT);
@@ -161,6 +162,13 @@ $app->put('/account/cart', function (Request $request, Response $response, $args
     $stmt = $c->prepare($sql);
     $stmt->bind_param('sssi', $body['customer_name'], $body['phone_number'], $body['address'], $bid);
     $stmt->execute();
+    
+    if($user['name'] !== $body['customer_name'] || $user['phone_number'] !== $body['phone_number'] || $user['address'] !== $body['address']){
+        $sql = 'UPDATE `User` SET `name` = ?, `phone_number` = ?, `address` = ? WHERE username = ?';
+        $stmt = $c->prepare($sql);
+        $stmt->bind_param('ssss', $body['customer_name'], $body['phone_number'], $body['address'], $username);
+        $stmt->execute();
+    }
 
     $json = json_encode(array('success' => true), JSON_PRETTY_PRINT);
     $response->getBody()->write($json);
@@ -294,7 +302,7 @@ $app->get('/account/order', function (Request $request, Response $response, $arg
 
     $username = $request->getHeaders()['Username'][0];
 
-    $sql = '
+    $sql  = '
         SELECT
             `bid`,  `Customer_name`,  Bill.`phone_number`, Bill.`address`,  `Total_price`,  `Datetime`,  `status`
         FROM
